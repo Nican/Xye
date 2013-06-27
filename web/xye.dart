@@ -113,6 +113,7 @@ class GridCanvasDrawer {
   }
   
   void setSpriteSheet(ImageElement image, int squareSize){
+    this.squareSize = squareSize;
     //this.spriteSheet = image;
     if(!image.complete){
       image.onLoad.listen((T){
@@ -126,9 +127,7 @@ class GridCanvasDrawer {
     spriteSheet = new CanvasElement(width: w, height: h);
     CanvasRenderingContext2D ctx = spriteSheet.getContext('2d') as CanvasRenderingContext2D;
     
-    ctx.drawImage(image, 0, 0);
-        
-    this.squareSize = squareSize;
+    ctx.drawImage(image, 0, 0);    
   }
   
   void draw(Point position, int x, int y, {Color color: null}){
@@ -143,10 +142,21 @@ class GridCanvasDrawer {
         SquareSize, SquareSize);
         */
     
-    _draw(x * squareSize, y * squareSize, squareSize,  position.x * SquareSize,  position.y * SquareSize, SquareSize, color);
+    _draw(this.canvas, x * squareSize, y * squareSize, squareSize,  position.x * SquareSize,  position.y * SquareSize, SquareSize, color);
   }
   
-  void drawCorner(Point position, int x, int y, RoundCorner corner, {Color color: null}){
+  void drawCanvas(CanvasElement elem, Point position){
+    context.drawImage(elem,  position.x * SquareSize,  position.y * SquareSize);
+  }
+  
+  CanvasElement newPrerenderCanvas(){
+    var canvas = new CanvasElement(width: SquareSize, height: SquareSize);
+    
+    
+    return canvas;
+  }
+  
+  void drawCorner(CanvasElement target, int x, int y, RoundCorner corner, {Color color: null}){
     num sX = (corner == RoundCorner.RC_1 || corner == RoundCorner.RC_7) ? 0 : squareSize/2;
     num sY = (corner == RoundCorner.RC_7 || corner == RoundCorner.RC_9) ? 0 : squareSize/2;
     
@@ -163,12 +173,14 @@ class GridCanvasDrawer {
         position.y * SquareSize + dY, 
         SquareSize/2, SquareSize/2);
         */
-    _draw(x * squareSize + sX, y * squareSize + sY, squareSize/2, position.x * SquareSize + dX, position.y * SquareSize + dY, SquareSize/2, color);
-    
+    _draw(target, x * squareSize + sX, y * squareSize + sY, squareSize/2, dX, dY, SquareSize/2, color);
   }
   
-  void _draw(num sx, num sy, num ssize, num tx, num ty, num tsize, Color color){
-    var ctx = spriteSheet.getContext("2d") as CanvasRenderingContext2D;;
+  void _draw(CanvasElement target, num sx, num sy, num ssize, num tx, num ty, num tsize, Color color){
+    if(spriteSheet == null)
+      return;
+    
+    var ctx = spriteSheet.getContext("2d") as CanvasRenderingContext2D;
     
     ImageData imageData = ctx.getImageData(sx, sy, ssize, ssize);
     var pixels = imageData.data;
@@ -182,6 +194,8 @@ class GridCanvasDrawer {
         pixels[i*4+2] = (pixels[i*4+2] * color.b).toInt();
       }
     }
+    
+    CanvasRenderingContext2D context = target.getContext("2d") as CanvasRenderingContext2D;
     
     context.putImageData(imageData, tx, ty, 0, 0, tsize, tsize);    
   }
@@ -1208,12 +1222,15 @@ class Wall extends Object {
   bool round9 = false;
   int kind = 0;
   
+  CanvasElement prerenderCanvas;
+  
   Wall(Square square) : super(square){
   }
   
   void onDeath(){}
   
-  void draw(GridCanvasDrawer context){
+  void updateCanvas(GridCanvasDrawer context){
+    
     int sz2 = (SquareSize/2).toInt();
     int ty = SquareSize*kind;
     
@@ -1243,9 +1260,11 @@ class Wall extends Object {
     if( !inborder && (!upright || !upleft || !downright ||!downleft) )
         inborder=true;
     
+    prerenderCanvas = context.newPrerenderCanvas();
+    
     void drawCorner(bool round, bool a, bool b, bool c, RoundCorner corner){
       void drawRect(int sx, int sy){
-        context.drawCorner(position, sx, sy, corner);
+        context.drawCorner(prerenderCanvas, sx, sy, corner);
       }
       
       if (round)
@@ -1268,6 +1287,13 @@ class Wall extends Object {
     drawCorner(round9, up, right, upright, RoundCorner.RC_9);
     drawCorner(round1, down, left, downleft, RoundCorner.RC_1);
     drawCorner(round3, down, right, downright, RoundCorner.RC_3);
+  }
+  
+  void draw(GridCanvasDrawer context){
+    if(prerenderCanvas == null)
+      updateCanvas(context);
+    
+    context.drawCanvas(prerenderCanvas, position);
  
     //context.context.fillStyle = "black";
     //context.context.fillRect(position.x * SquareSize, position.y * SquareSize, SquareSize, SquareSize);
