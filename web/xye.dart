@@ -634,21 +634,33 @@ class Square {
   Point position;
   bool update = true;
   bool updateLater = false;
+  CanvasElement element;
   
   Square(this.position);
   
-  void draw(GridCanvasDrawer context){
+  void draw(GridCanvasDrawer drawer){
+    if( element == null )
+      element = drawer.newPrerenderCanvas();
     
-    if(gObject != null && !gObject.renderAfterObjects){
-      gObject.draw(context);
+    if(update == true){
+      updateBackground(drawer);
     }
+    
+    
+    
+  }
+  
+  void updateBackground(GridCanvasDrawer drawer){
+    var context = element.getContext("2d");
+    
+    if(gObject != null && !gObject.renderAfterObjects)
+      gObject.draw(drawer, context);
     
     if( object != null )
-      object.draw(context);
+      object.draw(drawer, context);
     
-    if(gObject != null && gObject.renderAfterObjects){
-      gObject.draw(context);
-    }
+    if(gObject != null && gObject.renderAfterObjects)
+      gObject.draw(drawer, context);
     
   }
 }
