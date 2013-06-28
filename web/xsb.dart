@@ -1,6 +1,27 @@
 
 part of xye;
 
+class XsbLevelPack {
+  
+  List<XsbLevel> levels = new List();
+  
+  XsbLevelPack(String levelsData){
+    levelsData.split(";").forEach((item){
+      List<String> lines = item.split("\n");
+      lines.remove(0);
+      lines.remove(0);
+      
+      if(lines.length < 3)
+        return;
+      
+      levels.add(new XsbLevel(lines.join("\n")));      
+    });    
+    
+    print("Loaded ${levels.length} levels");
+  }
+  
+}
+
 void LoadXsbWall(Point pt, {dark: false}){
   Square sq = Game.get(pt);
   Wall wall = new Wall(sq);

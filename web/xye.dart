@@ -4,7 +4,6 @@ import 'dart:core';
 import 'dart:math';
 import 'dart:async';
 
-
 part 'xsb.dart';
 
 final int XYE_HORZ = 30;
@@ -45,6 +44,10 @@ void main() {
   });
   window.onKeyUp.listen((KeyboardEvent e){
     Game.onKeyUp(e.which);
+  });
+  
+  HttpRequest.getString("microban.xsb").then((String response){
+    new XsbLevelPack(response);
   });
   
   Timer timer = new Timer.periodic(new Duration(milliseconds: 100), (Timer t){
@@ -1232,7 +1235,7 @@ class Wall extends Object {
   void updateCanvas(GridCanvasDrawer context){
     
     int sz2 = (SquareSize/2).toInt();
-    int ty = SquareSize*kind;
+    int ty = kind;
     
     int px= position.x, py=position.y;
     int rx=px+1, lx=px-1, uy=py+1, dy=py-1;
@@ -1256,15 +1259,16 @@ class Wall extends Object {
     right = right && !round9 && !round3;
     left = left && !round7 && !round1;
     
-    bool inborder = (!left||!up||!right||!down);
+    bool inborder = !left||!up||!right||!down;
     if( !inborder && (!upright || !upleft || !downright ||!downleft) )
         inborder=true;
     
     prerenderCanvas = context.newPrerenderCanvas();
+    Color color = new Color(192/255,192/255,192/255);
     
     void drawCorner(bool round, bool a, bool b, bool c, RoundCorner corner){
       void drawRect(int sx, int sy){
-        context.drawCorner(prerenderCanvas, sx, sy, corner);
+        context.drawCorner(prerenderCanvas, sx, sy, corner, color: color);
       }
       
       if (round)
@@ -1325,7 +1329,7 @@ class Wall extends Object {
   
   Wall find(int sx, int sy, int kind ){
     Square sq = Game.get(new Point(sx,sy));
-    if( sq.object != null && sq is Wall){
+    if( sq.object != null && sq.object is Wall){
       Wall other = sq.object as Wall;
       if(kind == 6 || other.kind == 6 || other.kind == kind)
         return other;
