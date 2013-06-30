@@ -6,15 +6,18 @@ class XsbLevelPack {
   List<XsbLevel> levels = new List();
   
   XsbLevelPack(String levelsData){
+    int id = 1;
+    
     levelsData.split(";").forEach((item){
       List<String> lines = item.split("\n");
-      lines.remove(0);
-      lines.remove(0);
+      lines.removeAt(0);
+      lines.removeAt(0);
       
       if(lines.length < 3)
         return;
       
-      levels.add(new XsbLevel(lines.join("\n")));      
+      levels.add(new XsbLevel(id, lines.join("\n")));      
+      id++;
     });    
     
     print("Loaded ${levels.length} levels");
@@ -22,45 +25,45 @@ class XsbLevelPack {
   
 }
 
-void LoadXsbWall(Point pt, {dark: false}){
-  Square sq = Game.get(pt);
+void LoadXsbWall(Level level, Point pt, {dark: false}){
+  Square sq = level.get(pt);
   Wall wall = new Wall(sq);
 }
 
-void LoadXsbMarked(Point pt, BlockColor bc){
-  new Marked(Game.get(pt), bc);
+void LoadXsbMarked(Level level, Point pt, BlockColor bc){
+  new Marked(level.get(pt), bc);
 }
 
-void LoadXsbBlock(Point pt, BlockColor bc){
-  new Block(Game.get(pt), bc, false);
+void LoadXsbBlock(Level level, Point pt, BlockColor bc){
+  new Block(level.get(pt), bc, false);
 }
 
-void LoadXsbMarkedBlock(Point pt, BlockColor bc){
-  LoadXsbMarked(pt, bc);
-  LoadXsbBlock(pt, bc);
+void LoadXsbMarkedBlock(Level level, Point pt, BlockColor bc){
+  LoadXsbMarked(level,pt, bc);
+  LoadXsbBlock(level,pt, bc);
 }
 
-void SetXsbKye(Point pt){
-  Game.xye.move(pt.clone());
+void SetXsbKye(Level level, Point pt){
+  level.xye.move(pt.clone());
 }
 
-void LoadXsbMarkedKye(Point pt, BlockColor bc){
-  LoadXsbMarked(pt, bc);
-  SetXsbKye(pt);
+void LoadXsbMarkedKye(Level level, Point pt, BlockColor bc){
+  LoadXsbMarked(level, pt, bc);
+  SetXsbKye(level, pt);
 }
 
-Grid<int> FromXyeDFS(Point xyePos){
+Grid<int> FromXyeDFS(Level level, Point xyePos){
   
-  Grid<int> grid = new Grid(Game.grid.width, Game.grid.height);
+  Grid<int> grid = new Grid(level.grid.width, level.grid.height);
   List<Point> directions = [Direction.UP.pt, Direction.DOWN.pt, Direction.RIGHT.pt, Direction.LEFT.pt];
   
   grid.fill(0);
   
-  void DFS(Point pt, int level){
+  void DFS(Point pt, int depth){
     if(grid[pt] != 0){
       return;
     }
-    grid[pt] = level;
+    grid[pt] = depth;
     
     directions.forEach((Point delta){
       Point newPt = new Point(pt.x + delta.x, pt.y + delta.y );
@@ -68,9 +71,9 @@ Grid<int> FromXyeDFS(Point xyePos){
       if( newPt.x < 0 || newPt.y < 0 || newPt.x > grid.width || newPt.y > grid.height )
         return;
       
-      Object obj = Game.get(newPt).object;
+      Object obj = level.get(newPt).object;
       if( obj == null || obj is Block ){
-        DFS(newPt, level+1);
+        DFS(newPt, depth+1);
       }
     });
   }
@@ -79,25 +82,16 @@ Grid<int> FromXyeDFS(Point xyePos){
   return grid;    
 }
 
-bool WhiteSpace(Point pt){
-  Square sq = Game.get(pt);
+bool WhiteSpace(Square sq){
   if(sq.gObject != null)
     return false;
   
   return sq.gObject == null && sq.object is! Wall;
 }
 
-bool MarkedPresentAt(Point pt){
-  return Game.get(pt).gObject is Marked;
-}
-
-bool BlockedEntrance(Point pt){
-  Square sq = Game.get(pt);
-  return sq.gObject != null || sq.object is Wall;
-}
-
 class XsbLevel {
   
+  int id;
   int width;
   int height;
   
@@ -108,7 +102,7 @@ class XsbLevel {
   
   Point gemPosition;
   
-  XsbLevel(String level){
+  XsbLevel(this.id, String level){
     
     List<String> lines = level.split("\n");
     
@@ -124,29 +118,29 @@ class XsbLevel {
     
   }
   
-  void load(){
+  Level load(){
     Point offset = new Point(
         ((XYE_HORZ- this.width)/2).toInt(),
         (XYE_VERT - ((XYE_VERT-this.height)/2)-1).toInt());
     int j, i;
-    
+    Level level = new Level();
 
     for (j=0;j<height;j++){
       for (i=0;i<width;i++){
-        loadPoint(i, j, new Point(offset.x+i, offset.y-j));        
+        loadPoint(level, i, j, new Point(offset.x+i, offset.y-j));        
       }
     }
     
-    Grid<int> dfs = FromXyeDFS(Game.xye.position);
+    Grid<int> dfs = FromXyeDFS(level, level.xye.position);
     
-    Game.grid.grid.forEach((Square sq){
+    level.grid.grid.forEach((Square sq){
       if(dfs[sq.position] == 0 && sq.object == null){
           new Wall(sq);
       }
     });
-    FindAGoodWall(Game.xye.position);
+    FindAGoodWall(level, level.xye.position);
     
-    Grid<int> mem = new Grid(Game.grid.width, Game.grid.height);
+    Grid<int> mem = new Grid(level.grid.width, level.grid.height);
     mem.fill(2);
     
     bywall = false;
@@ -154,24 +148,26 @@ class XsbLevel {
     for (j=1;j<XYE_VERT-1;j++){
       for (i=1;i<XYE_HORZ-1;i++){
         Point pt = new Point(i,j);
-        if(!WhiteSpace(pt)){
+        if(!WhiteSpace(level.get(pt))){
           continue;
         }
         
         if(Direction.all().any((Direction dir){
-          Point newPt = pt + dir.pt; 
-          return MarkedPresentAt(newPt) && !BlockedEntrance(newPt);
+          Square sq = level.get(pt + dir.pt);
+          return sq.gObject is Marked && sq.object is! Wall;
         })){
-          EnsurePath(pt, mem, false);
+          EnsurePath(level, pt, mem, false);
         }
       
       }
-    }    
+    } 
+    
+    return level;
   }
   
   bool bywall = false;
   
-  bool EnsurePath(Point pt, Grid<int> mem, bool nowall){
+  bool EnsurePath(Level level, Point pt, Grid<int> mem, bool nowall){
     if( pt.x <= 0 || pt.y <= 0 || pt.x >= XYE_HORZ || pt.y >= XYE_VERT )
       return false;
     
@@ -188,9 +184,9 @@ class XsbLevel {
     
     mem[pt] = 0;
     
-    Square sq = Game.get(pt);
+    Square sq = level.get(pt);
     Object object = sq.object;
-    if(MarkedPresentAt(pt))
+    if(sq.gObject is Marked)
       return false;
     
     bool wallrep=false;
@@ -245,28 +241,28 @@ class XsbLevel {
     }
     
     bool wallcheck;
-    if (EnsurePath(t,mem,true)){
+    if (EnsurePath(level, t,mem,true)){
       mem[pt]=1;
       return true;
     }
     
     wallcheck=bywall;
     
-    if (EnsurePath(t2,mem,true)) {
+    if (EnsurePath(level,t2,mem,true)) {
       mem[pt]=1;
       return true;
     }
     
     wallcheck=wallcheck || bywall;
 
-    if (EnsurePath(t3,mem,true)){
+    if (EnsurePath(level,t3,mem,true)){
       mem[pt]=1;
       return true;
     }
     
     wallcheck=wallcheck || bywall;
 
-    if (EnsurePath(t4,mem,true)) {
+    if (EnsurePath(level,t4,mem,true)) {
       mem[pt]=1;
       return true;
     }
@@ -276,22 +272,22 @@ class XsbLevel {
     bywall=wallcheck;
     if (!nowall)
     {
-        if  (EnsurePath(t,mem,false)) {
+        if  (EnsurePath(level,t,mem,false)) {
           mem[pt]=1;
           return true;
         }
         
-        if  (EnsurePath(t2,mem,false)){
+        if  (EnsurePath(level,t2,mem,false)){
           mem[pt]=1;
           return true;
         }
         
-        if  (EnsurePath(t3,mem,false)){
+        if  (EnsurePath(level,t3,mem,false)){
           mem[pt]=1;
           return true;
         }
         
-        if  (EnsurePath(t4,mem,false)){
+        if  (EnsurePath(level,t4,mem,false)){
           mem[pt]=1;
           return true;
         }
@@ -307,7 +303,7 @@ class XsbLevel {
 
     if (wallrep)
     {
-        new Wall(Game.get(pt));
+        new Wall(level.get(pt));
     }
 
     return false;
@@ -315,7 +311,7 @@ class XsbLevel {
   }
   
   
-  void loadPoint(int i, int j, Point pt){
+  void loadPoint(Level level, int i, int j, Point pt){
     switch(data[j][i])
     {
 /*
@@ -327,31 +323,31 @@ $ - box
 * - box on target
 */
         case('#'): 
-          LoadXsbWall(pt); 
+          LoadXsbWall(level, pt); 
           break;
         case('.'):
-          LoadXsbMarked(pt, color); 
+          LoadXsbMarked(level, pt, color); 
           break;
         case('*'):
-          LoadXsbMarkedBlock(pt, color);
+          LoadXsbMarkedBlock(level, pt, color);
           break;
         case('\$'): 
-          LoadXsbBlock(pt,color); 
+          LoadXsbBlock(level, pt,color); 
           break;
         case('+'):
-          LoadXsbMarkedKye(pt,color);
+          LoadXsbMarkedKye(level, pt,color);
           break;
         case('@'):
-          SetXsbKye(pt);
+          SetXsbKye(level, pt);
           break;
     }
   }
   
-  bool FindAGoodWall(Point pt, {bool rec: true}){
+  bool FindAGoodWall(Level level, Point pt, {bool rec: true}){
     if ((pt.x==0) || (pt.y==0) || (pt.x>=XYE_HORZ) || (pt.y>=XYE_VERT))
       return false;
 
-    Square sq = Game.get(pt);
+    Square sq = level.get(pt);
     Object object = sq.object;
     if (object != null)
     {
@@ -368,9 +364,9 @@ $ - box
     if (rec)
     {
       return Direction.all().any((Direction d){
-        return FindAGoodWall(pt + d.pt, rec: false);
+        return FindAGoodWall(level, pt + d.pt, rec: false);
       }) || Direction.all().any((Direction d){
-        return FindAGoodWall(pt + d.pt);
+        return FindAGoodWall(level, pt + d.pt);
       });
     }
 
