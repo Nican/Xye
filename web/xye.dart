@@ -13,8 +13,6 @@ final int XYE_HORZ = 30;
 final int XYE_VERT = 20;
 final int SquareSize = 40;
 
-//CanvasElement canvas = new CanvasElement(width: XYE_HORZ * SquareSize, height: XYE_VERT * SquareSize);
-//CanvasRenderingContext2D context = canvas.getContext("2d") as CanvasRenderingContext2D;
 ImageElement spriteSheet = new ImageElement(src: "clean40.png");
 
 class Color {
@@ -26,12 +24,7 @@ class Color {
 }
 
 void main() {  
-  //document.body.append(canvas);
   
-  //canvas.style.width = '75%';
-  //canvas.style.height = '100%';
-  
-  window.requestAnimationFrame(gameDraw);
   window.onKeyDown.listen((KeyboardEvent e){
     GameEngine.onKeyDown(e.which);
   });
@@ -40,43 +33,12 @@ void main() {
   });
   
   spriteSheet.onLoad.listen((T){
-    HttpRequest.getString("microban.xsb").then((String response){
-      XsbLevelPack pack = new XsbLevelPack(response);
-
-
-      
-      //Level level = pack.levels[0].load();
-      
-      //GameEngine.level = level;
-    });
+    Main page = new Main();
+    document.body.append(page.mainDiv);
   });
   
-  Timer timer = new Timer.periodic(new Duration(milliseconds: 100), (Timer t){
-    GameEngine.loop();
-  });
   
-  //GameEngine.drawer.setSpriteSheet(spriteSheet, 40 );
   
-  //Game.startGame();
-  //new XsbLevel(firstLevel).load();
-  
-}
-
-
-bool CanPush(Object object){
-  return object is Xye || object is Pusher || object is Magnetic || object is RoboXye;
-}
-
-bool IsXyeOrBotAt(Square sq)
-{
-    Object object = sq.object;
-    if (object==null) return false;
-    
-    return object is Xye || object is RoboXye || object is Rattler || object is RattlerNode;
-}
-
-bool ObjectResistsFire(Object o){
-  return false; //TODO: xye.cpp, Line 2186
 }
 
 class GridCanvasDrawer {
@@ -121,7 +83,8 @@ class GridCanvasDrawer {
   }
   
   void _draw(num sx, num sy, num ssize, num tx, num ty, num tsize, Color color){
-    if( color == null ){
+    
+    if( color == null || color != null){
       context.drawImageScaledFromSource(
           spriteSheet, 
           sx, sy, ssize, ssize, 
@@ -134,10 +97,10 @@ class GridCanvasDrawer {
     var pixels = imageData.data;
     var numPixels = pixels.length;
     
-    for (var i = 0; i < numPixels/4; i++) {
-      pixels[i*4]   = (pixels[i*4]   * color.r).toInt();
-      pixels[i*4+1] = (pixels[i*4+1] * color.g).toInt();
-      pixels[i*4+2] = (pixels[i*4+2] * color.b).toInt();
+    for (int i = 0; i < numPixels; i+=4) {
+      pixels[i]   = (pixels[i]   * color.r).toInt();
+      pixels[i+1] = (pixels[i+1] * color.g).toInt();
+      pixels[i+2] = (pixels[i+2] * color.b).toInt();
     }
     
     iconCacheContext.putImageData(imageData, 0, 0);    
@@ -164,8 +127,12 @@ class GridCanvasDrawer {
   }
   
   void rect(Point position, Color color){
-    context.fillStyle = "rgb(${(color.r*255).toInt()},${(color.g*255).toInt()},${(color.b*255).toInt()})";
+    setColor(color);
     context.fillRect(position.x * squareSize, position.y * squareSize, squareSize, squareSize);
+  }
+  
+  void setColor(Color color){
+    context.fillStyle = "rgb(${(color.r*255).toInt()},${(color.g*255).toInt()},${(color.b*255).toInt()})";
   }
   
 }
@@ -461,7 +428,7 @@ class Level {
   Xye xye;
   int lastXyeMove = 0;
   int counter = 0;
-  bool finishedLevel = false;
+  bool finished = false;
   bool gameOver = false;
   Direction lastXyeDir = Direction.DOWN;
   int flashPos = 0;
@@ -478,8 +445,11 @@ class Level {
     
   }
   
-  void terminateGame(){
-    //TODO
+  void terminate(bool good){
+    
+    if (good) {
+      finished = true;
+    }
   }
   
   void flashXyePosition(){
@@ -568,7 +538,7 @@ class Level {
   }
   
   void loop(){
-    if(finishedLevel){
+    if(finished){
       incCounters();
     } else {
       int i =0;

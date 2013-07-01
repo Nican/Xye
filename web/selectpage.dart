@@ -2,27 +2,24 @@ part of xye;
 
 
 
-bool elementInViewport(el) {
+bool elementInViewport(el, parent) {
+  if(!document.contains(el) || !document.contains(parent))
+    return false;
+  
   var top = el.offsetTop;
   var left = el.offsetLeft;
   var width = el.offsetWidth;
   var height = el.offsetHeight;
-
-  while(el.offsetParent != null) {
-    el = el.offsetParent;
-    top += el.offsetTop;
-    left += el.offsetLeft;
-  }
   
   bool valueInRange(int value, int min, int max){ 
     return (value >= min) && (value <= max); 
   }
   
-  bool xOverlap = valueInRange(left, window.pageXOffset, window.pageXOffset + window.innerWidth) ||
-                  valueInRange(window.pageXOffset, left, left + width);
+  bool xOverlap = valueInRange(left, parent.scrollLeft, parent.scrollLeft + parent.offsetWidth) ||
+                  valueInRange(parent.scrollLeft, left, left + width);
 
-  bool yOverlap = valueInRange(top, window.pageYOffset, window.pageYOffset + window.innerHeight) ||
-                  valueInRange(window.pageYOffset, top, top + window.innerHeight);
+  bool yOverlap = valueInRange(top, parent.scrollTop, parent.scrollTop + parent.offsetHeight) ||
+                  valueInRange(parent.scrollTop, top, top + parent.scrollHeight);
 
   return xOverlap && yOverlap;
 }
@@ -38,12 +35,29 @@ class SelectPage {
   
   bool pageRequested = false;
   
+  StreamController<Level> levelSelectedController = new StreamController<Level>();
+  Stream<Level> get onLevelSelected => levelSelectedController.stream;
+  
+  
   SelectPage(){
-    window.onScroll.listen(this.onScroll);
-    //window.onLoad.listen(this.onScroll);
+    itemList.onScroll.listen(this.onScroll);
     
     body..append(header)
       ..append(itemList);
+    
+    body.style.position = 'absolute';
+    body.style.top = 
+        body.style.bottom = 
+        body.style.right = 
+        body.style.left = '0px';
+    
+    itemList.style.position = 'absolute';
+    itemList.style.top = '50px';
+    itemList.style.overflowY = 'scroll';
+    itemList.style.bottom = 
+      itemList.style.right = 
+      itemList.style.left = '0px';
+    
     
     var title = new HeadingElement.h1();
     title.innerHtml = "Choose your level";
@@ -80,6 +94,10 @@ class SelectPage {
     
     itemList.append(elem.body);
     items.add(elem);
+    
+    elem.body.onClick.listen((T){
+      levelSelectedController.add(level.load());
+    });
   }
   
   void loadChild(SelectPageItem child){
@@ -88,9 +106,8 @@ class SelectPage {
   }
   
   void onScroll(e){
-
     items.forEach((child){
-      if(elementInViewport(child.body)){
+      if(elementInViewport(child.body, itemList)){
         if(child.isLoaded == false){
           loadChild(child as SelectPageItem);
         }

@@ -1,5 +1,21 @@
 part of xye;
 
+bool CanPush(Object object){
+  return object is Xye || object is Pusher || object is Magnetic || object is RoboXye;
+}
+
+bool IsXyeOrBotAt(Square sq)
+{
+    Object object = sq.object;
+    if (object==null) return false;
+    
+    return object is Xye || object is RoboXye || object is Rattler || object is RattlerNode;
+}
+
+bool ObjectResistsFire(Object o){
+  return false; //TODO: xye.cpp, Line 2186
+}
+
 abstract class Ent {
   int id;
   Point get position => square.position;
@@ -16,7 +32,7 @@ abstract class Ent {
   void kill();
   void onDeath();
   void updateSquare(){
-    level.get(position).update = true;    
+    square.update = true;    
   }
   
 }
@@ -312,7 +328,7 @@ class Xye extends Object {
           alpha = 0;
         } else {
           lives = 0;
-          level.terminateGame();
+          level.terminate(false);
           
           Square sq = level.get(position);
           GObject gobject = sq.gObject;
@@ -324,7 +340,7 @@ class Xye extends Object {
         level.flashXyePosition();
       } else {
         lives = 0;
-        level.terminateGame();
+        level.terminate(false);
         
         Square sq = level.get(position);
         GObject gobject = sq.gObject;
@@ -698,8 +714,7 @@ class Marked extends GObject {
     */
     context.draw(position, 6, anim+5);
     
-    if (active)
-      anim= (anim>=3?0:anim+1);
+    
   }
   
   void onEnter(Object entering){
@@ -713,7 +728,10 @@ class Marked extends GObject {
   }
   
   void loop(){
-    
+    if (active){
+      anim= (anim>=3?0:anim+1);
+      this.updateSquare(); 
+    }
   }
   
   bool canEnter(Object entering, Direction dir){
@@ -808,6 +826,10 @@ class Gem extends Object {
       
       sq.object = null;
       gemkind.remove(this);
+      
+      if(gemkind.gems.length == 0)
+        square.level.terminate(true);
+      
       return true;      
     }
     return false;    

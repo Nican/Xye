@@ -96,11 +96,10 @@ class XsbLevel {
   int height;
   
   List<List<String>> data;
-  
-  BlockColor color = new BlockColor("black");
-  GemType gemType = new GemType("red");
-  
   Point gemPosition;
+  
+  BlockColor color;
+  GemType gemType;
   
   XsbLevel(this.id, String level){
     
@@ -124,6 +123,9 @@ class XsbLevel {
         (XYE_VERT - ((XYE_VERT-this.height)/2)-1).toInt());
     int j, i;
     Level level = new Level();
+    
+    color = new BlockColor("black");
+    gemType = new GemType("red");
 
     for (j=0;j<height;j++){
       for (i=0;i<width;i++){
