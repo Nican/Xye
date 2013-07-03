@@ -48,8 +48,7 @@ class LevelPage {
   Level level;
   
   LevelPage(){
-    drawer = new GridCanvasDrawer(canvas);
-    drawer.setSpriteSheet(spriteSheet, 40);
+    drawer = new GridCanvasDrawer(canvas, spriteSheet);
     
     body.append(canvas);
     canvas.style.width = '75%';

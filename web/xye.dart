@@ -8,20 +8,15 @@ part 'xsb.dart';
 part 'ents.dart';
 part 'selectpage.dart';
 part 'main.dart';
+part 'drawing.dart';
 
 final int XYE_HORZ = 30;
 final int XYE_VERT = 20;
 final int SquareSize = 40;
 
-ImageElement spriteSheet = new ImageElement(src: "clean40.png");
 
-class Color {
-  double r;
-  double g;
-  double b;
-  
-  Color(this.r, this.g, this.b);
-}
+SpriteSheet spriteSheet;
+
 
 void main() {  
   
@@ -32,8 +27,17 @@ void main() {
     GameEngine.onKeyUp(e.which);
   });
   
-  spriteSheet.onLoad.listen((T){
+  ImageElement image = new ImageElement(src: "clean40.png");
+  
+  image.onLoad.listen((T){
+    CanvasElement element = new CanvasElement(width: image.width, height: image.height);
+    CanvasRenderingContext2D ctx = element.getContext('2d') as CanvasRenderingContext2D;
+    ctx.drawImage(image, 0, 0);   
+    
+    spriteSheet = new SpriteSheet(element, 40);
+    
     Main page = new Main();
+    
     document.body.append(page.mainDiv);
   });
   
@@ -41,101 +45,7 @@ void main() {
   
 }
 
-class GridCanvasDrawer {
-  CanvasElement canvas;
-  CanvasRenderingContext2D context; 
-  
-  CanvasElement spriteSheet;  
-  int iconSize;  
-  int get squareSize => SquareSize;  
-  
-  CanvasElement iconCache;
-  CanvasRenderingContext2D get iconCacheContext => iconCache.getContext('2d') as CanvasRenderingContext2D;
-  
-  GridCanvasDrawer(this.canvas){
-    context = canvas.getContext("2d") as CanvasRenderingContext2D;
-  }
-  
-  void setSpriteSheet(ImageElement image, int squareSize){
-    this.iconSize = squareSize;
-    
-    
-    if(!image.complete){
-      image.onLoad.listen((T){
-        setSpriteSheet(image, squareSize);        
-      });      
-      return;
-    }
-    
-    spriteSheet = new CanvasElement(width: image.width, height: image.height);
-    iconCache = new CanvasElement(width: iconSize, height: iconSize); 
-    
-    CanvasRenderingContext2D ctx = spriteSheet.getContext('2d') as CanvasRenderingContext2D;
-    ctx.drawImage(image, 0, 0);    
-  }
-  
-  void drawCanvas(CanvasElement elem, Point position){
-    context.drawImage(elem,  position.x * SquareSize,  position.y * SquareSize);
-  }
-  
-  void clear(Point point){
-    context.clearRect(point.x * iconSize, point.y * iconSize, iconSize, iconSize);
-  }
-  
-  void _draw(num sx, num sy, num ssize, num tx, num ty, num tsize, Color color){
-    
-    if( color == null || color != null){
-      context.drawImageScaledFromSource(
-          spriteSheet, 
-          sx, sy, ssize, ssize, 
-          tx, ty, tsize, tsize);
-      return;
-    }
-    
-    var ctx = spriteSheet.getContext("2d") as CanvasRenderingContext2D;
-    ImageData imageData = ctx.getImageData(sx, sy, ssize, ssize);
-    var pixels = imageData.data;
-    var numPixels = pixels.length;
-    
-    for (int i = 0; i < numPixels; i+=4) {
-      pixels[i]   = (pixels[i]   * color.r).toInt();
-      pixels[i+1] = (pixels[i+1] * color.g).toInt();
-      pixels[i+2] = (pixels[i+2] * color.b).toInt();
-    }
-    
-    iconCacheContext.putImageData(imageData, 0, 0);    
-    
-    context.drawImageScaledFromSource(
-        iconCache, 
-        0, 0, ssize, ssize, 
-        tx, ty, tsize, tsize);
-        
-  }
-  
-  void drawCorner(Point point, int x, int y, RoundCorner corner, {Color color: null}){
-    num sX = (corner == RoundCorner.RC_1 || corner == RoundCorner.RC_7) ? 0 : iconSize/2;
-    num sY = (corner == RoundCorner.RC_7 || corner == RoundCorner.RC_9) ? 0 : iconSize/2;
-    
-    num dX = (corner == RoundCorner.RC_1 || corner == RoundCorner.RC_7) ? 0 : squareSize/2;
-    num dY = (corner == RoundCorner.RC_7 || corner == RoundCorner.RC_9) ? 0 : squareSize/2;
-    
-    _draw(x * iconSize + sX, y * iconSize + sY, iconSize/2, point.x * squareSize + dX, point.y * squareSize + dY, squareSize/2, color);
-  }
-  
-  void draw(Point point, int x, int y, {Color color: null}){
-    _draw(x * iconSize, y * iconSize, iconSize, point.x * squareSize, point.y * squareSize, squareSize, color);
-  }
-  
-  void rect(Point position, Color color){
-    setColor(color);
-    context.fillRect(position.x * squareSize, position.y * squareSize, squareSize, squareSize);
-  }
-  
-  void setColor(Color color){
-    context.fillStyle = "rgb(${(color.r*255).toInt()},${(color.g*255).toInt()},${(color.b*255).toInt()})";
-  }
-  
-}
+
 
 class Square {
   Object object = null;
@@ -608,6 +518,7 @@ class Point {
     return new Point(x + other.x, y + other.y);
   }
   
+  operator ==(Point other) => this.x == other.x && this.y == other.y;
 }
 
 

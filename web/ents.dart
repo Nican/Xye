@@ -592,9 +592,7 @@ class Wall extends Object {
   void onDeath(){}
   
   void draw(GridCanvasDrawer context){
-    int sz2 = (SquareSize/2).toInt();
     int ty = kind;
-    
     int px= position.x, py=position.y;
     int rx=px+1, lx=px-1, uy=py+1, dy=py-1;
     if(rx>=XYE_HORZ) rx=0;
@@ -622,6 +620,11 @@ class Wall extends Object {
         inborder=true;
     
     Color color = new Color(192/255,192/255,192/255);
+    
+    //if(up && down && left && right && upright && upleft && downright && downleft ){
+    //  context.rect(position, color);
+    //  return;
+    //}
     
     void drawCorner(bool round, bool a, bool b, bool c, RoundCorner corner){
       void drawRect(int sx, int sy){
@@ -675,10 +678,10 @@ class Wall extends Object {
   }
   
   Wall find(int sx, int sy, int kind ){
-    Square sq = level.get(new Point(sx,sy));
-    if( sq.object != null && sq.object is Wall){
+    Square sq = level.grid.get(sx,sy);
+    if( sq.object is Wall){
       Wall other = sq.object as Wall;
-      if(kind == 6 || other.kind == 6 || other.kind == kind)
+      if(other.kind == kind || kind == 6 || other.kind == 6 )
         return other;
     }
     return null;

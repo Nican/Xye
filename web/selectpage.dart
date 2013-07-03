@@ -2,14 +2,17 @@ part of xye;
 
 
 
-bool elementInViewport(el, parent) {
+bool elementInViewport(Element el, parent) {
   if(!document.contains(el) || !document.contains(parent))
     return false;
   
+  Rect rect = el.getBoundingClientRect();
+  /*
   var top = el.offsetTop;
   var left = el.offsetLeft;
   var width = el.offsetWidth;
   var height = el.offsetHeight;
+  
   
   bool valueInRange(int value, int min, int max){ 
     return (value >= min) && (value <= max); 
@@ -22,6 +25,13 @@ bool elementInViewport(el, parent) {
                   valueInRange(parent.scrollTop, top, top + parent.scrollHeight);
 
   return xOverlap && yOverlap;
+  */
+  return (
+      rect.top >= 0 &&
+      rect.left >= 0 &&
+      rect.bottom <= (window.innerHeight || document. documentElement.clientHeight) && /*or $(window).height() */
+      rect.right <= (window.innerWidth || document. documentElement.clientWidth) /*or $(window).width() */
+  );
 }
 
 class SelectPage {
@@ -64,7 +74,7 @@ class SelectPage {
     
     header.append(title);
     
-    new Timer.periodic(new Duration(milliseconds: 10), processQueue);
+    new Timer.periodic(new Duration(milliseconds: 20), processQueue);
   }
   
   void requestLevels(){
@@ -86,7 +96,8 @@ class SelectPage {
       addLevel(level);
     }
     
-    items.take(20).forEach(loadChild);
+    //items.take(20).forEach(loadChild);
+    onScroll(null);
   }
   
   void addLevel(XsbLevel level){
@@ -117,11 +128,15 @@ class SelectPage {
   }
   
   void processQueue(Timer timer){
-    if(loadQueue.isEmpty)
-      return;
-    
-    SelectPageItem item = loadQueue.removeAt(0);
-    item.load();    
+    while(!loadQueue.isEmpty){    
+      SelectPageItem child = loadQueue.removeAt(0);
+      if(elementInViewport(child.body, itemList)){
+        window.requestAnimationFrame((val) => child.load());
+        return; 
+      } else {
+        child.isLoaded = false;
+      }
+    }
   }
   
 }
@@ -131,7 +146,7 @@ class SelectPageItem {
   
   DivElement body = new DivElement();
   DivElement title = new DivElement();
-  CanvasElement canvas = new CanvasElement(width: XYE_HORZ * SquareSize, height: XYE_VERT * SquareSize);
+  CanvasElement canvas = new CanvasElement(width: XYE_HORZ * 10, height: XYE_VERT * 10);
   bool isLoaded = false;
   
   SelectPageItem(this.level){
@@ -158,10 +173,9 @@ class SelectPageItem {
   }
   
   void load(){    
-    GridCanvasDrawer drawer = new GridCanvasDrawer(canvas);
-    drawer.setSpriteSheet(spriteSheet, 40 );
+    GridCanvasDrawer drawer = new GridCanvasDrawer(canvas, spriteSheet);
+    //drawer.setSpriteSheet(spriteSheet, 40 );
     level.load().draw(drawer);
-    print("Loaded");
   }
   
 }
