@@ -7,7 +7,7 @@ bool elementInViewport(Element el, parent) {
     return false;
   
   Rect rect = el.getBoundingClientRect();
-  /*
+  
   var top = el.offsetTop;
   var left = el.offsetLeft;
   var width = el.offsetWidth;
@@ -25,13 +25,14 @@ bool elementInViewport(Element el, parent) {
                   valueInRange(parent.scrollTop, top, top + parent.scrollHeight);
 
   return xOverlap && yOverlap;
-  */
+  /*
   return (
       rect.top >= 0 &&
       rect.left >= 0 &&
       rect.bottom <= (window.innerHeight || document. documentElement.clientHeight) && /*or $(window).height() */
       rect.right <= (window.innerWidth || document. documentElement.clientWidth) /*or $(window).width() */
   );
+  */
 }
 
 class SelectPage {

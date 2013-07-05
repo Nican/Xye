@@ -32,6 +32,11 @@ class GridCanvasDrawer {
     context.clearRect(point.x * iconSize, point.y * iconSize, iconSize, iconSize);
   }
   
+  void clearAll(){
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  
   void drawCorner(Point point, num x, num y, RoundCorner corner, {Color color: null}){
     num sX = (corner == RoundCorner.RC_1 || corner == RoundCorner.RC_7) ? 0 : iconSize/2;
     num sY = (corner == RoundCorner.RC_7 || corner == RoundCorner.RC_9) ? 0 : iconSize/2;

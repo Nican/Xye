@@ -39,20 +39,46 @@ class Main {
 class LevelPage {
   
   DivElement body = new DivElement();
+  DivElement header = new DivElement();
+  DivElement canvasFrame = new DivElement();
+  DivElement GameWonMessage = new DivElement();
+  
   CanvasElement canvas = new CanvasElement(width: XYE_HORZ * SquareSize, height: XYE_VERT * SquareSize);
   CanvasRenderingContext2D get context => canvas.getContext("2d") as CanvasRenderingContext2D;
   GridCanvasDrawer drawer;
   
-  Timer timer;
-  
   Level level;
+  int animationCallbackId;
   
   LevelPage(){
     drawer = new GridCanvasDrawer(canvas, spriteSheet);
     
-    body.append(canvas);
-    canvas.style.width = '75%';
-    canvas.style.height = '100%';
+    body.style.left = 
+        body.style.right = 
+        body.style.bottom = 
+        body.style.top = '0px';
+    body.style.position = 'absolute';
+    
+    header.style.left = 
+        header.style.right = 
+        header.style.top = '0px';
+    header.style.height = '64px';
+    header.style.position = 'absolute';    
+    
+    canvasFrame.style.left = 
+        canvasFrame.style.bottom = '0px';
+    canvasFrame.style.top = '64px';
+    canvasFrame.style.right = '20%';
+    canvasFrame.style.position = 'absolute';
+    canvasFrame.style.textAlign = "center";
+    canvasFrame.style.backgroundColor = "rgb(192,192,192)";
+    
+    canvas.style.height = '99%';    
+    canvas.style.backgroundColor = 'white';
+    
+    body.append(header);
+    body.append(canvasFrame);
+    canvasFrame.append(canvas);
     
     new Timer.periodic(new Duration(milliseconds: 100), this.loop);
   }
@@ -60,6 +86,8 @@ class LevelPage {
   void loadLevel(Level level){
     this.level = level;
     GameEngine.level = level;
+    header.innerHtml = "My level";
+    cancelDraw();
     requestDraw();
   }
   
@@ -72,7 +100,13 @@ class LevelPage {
   }
   
   void requestDraw(){
-    window.requestAnimationFrame(gameDraw);
+    animationCallbackId = window.requestAnimationFrame(gameDraw);
+  }
+  
+  void cancelDraw(){
+    if(animationCallbackId != null)
+      window.cancelAnimationFrame(animationCallbackId);
+    animationCallbackId = null;
   }
   
   void loop(Timer timer){
