@@ -842,23 +842,27 @@ class Gem extends Object {
   
 }
 
-class Dangerous extends Object {
+
+class Dangerous { //extends Object {
   
 }
+
+
+
+class Teleport { //extends Object {
+  
+}
+
+class Key { //extends Object {
+  
+}
+
+class Earth { //extends Object {
+  
+}
+
 
 class Explosion {
-  
-}
-
-class Teleport extends Object {
-  
-}
-
-class Key extends Object {
-  
-}
-
-class Earth extends Object {
   
 }
 

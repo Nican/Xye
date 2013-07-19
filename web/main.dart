@@ -62,19 +62,19 @@ class LevelPage {
     header.style.left = 
         header.style.right = 
         header.style.top = '0px';
-    header.style.height = '64px';
-    header.style.position = 'absolute';    
+    header.style..height = '64px'
+      ..position = 'absolute';    
     
     canvasFrame.style.left = 
         canvasFrame.style.bottom = '0px';
-    canvasFrame.style.top = '64px';
-    canvasFrame.style.right = '20%';
-    canvasFrame.style.position = 'absolute';
-    canvasFrame.style.textAlign = "center";
-    canvasFrame.style.backgroundColor = "rgb(192,192,192)";
+    canvasFrame.style..top = '64px'
+      ..right = '20%'
+      ..position = 'absolute'
+      ..textAlign = "center"
+      ..backgroundColor = "rgb(192,192,192)";
     
-    canvas.style.height = '99%';    
-    canvas.style.backgroundColor = 'white';
+    canvas.style..height = '99%'   
+      ..backgroundColor = 'white';
     
     body.append(header);
     body.append(canvasFrame);
